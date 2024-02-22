@@ -22,9 +22,11 @@ p[n] = \sigma(k_1\textbf{u}[n]) \odot sin(k_2\textbf{u}[n])
 $$
 
 Where $k_1$ governs the probabilities around the threshold and $k_2$  is a tunable refractory parameter. 
+
 $$
 \textbf{s}[n] = Bernoulli(p[n])
 $$
+
 $$
 \frac{\delta \textbf{s}[n]}{p[n]} \approx p[n]
 $$
