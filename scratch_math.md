@@ -21,7 +21,7 @@ $$
 p[n] = \sigma(k_1\textbf{u}[n]) \odot sin(k_2\textbf{u}[n])
 $$
 
-Where $k_1$ governs the probabilities around the threshold and $k_2$  is a tunable refractory parameter. 
+Where $k_1$ governs the probabilities around the threshold and $k_2$  is a tunable refractory parameter. Likely scenario is $k_1$ is very large, and $k_2$ is a multiple of $2\pi$ to allow for the probable spiking regions to align with multiples of the firing threshold.
 
 $$
 \textbf{s}[n] = Bernoulli(p[n])
@@ -85,5 +85,16 @@ $$
 $$
 y_k = x_k + \beta y_{k-1}
 $$
+
+RCuBaLI Discrete: C is the all-to-all recurrent weight matrix.
+
+$$
+x_k = Ax_{k-1} + Bu_k + Cy_{k-1}
+$$
+
+$$
+y_k = x_k + \beta y_{k-1}
+$$
+
 
 It is interesting to note the differences between SSM discrete and CuBaLI discrete - SSM has a linear decoding operator C and learnable skip connection via D, while CuBaLI's output takes the hidden state directly and is itself recurrent. It would be interesting to compare the performance differences of S5 and CuBaLI when both are initialized the same way.
