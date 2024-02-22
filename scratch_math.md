@@ -1,12 +1,15 @@
 SSM Continuous - note that $A$ is diagonalized in SSMs to facilitate efficent computation via recurrent scans, making it equivalent to individually learned time constants in SNNs! This means that LI neurons can be computed in logarithmic time on sufficient hardware. Then just need to combine with a stochastic firing mechanism? The Sigmoid-Bernoulli activation from SPSN was overactive and controlled by spike count regularization, but perhaps a more intelligent interpretation of the membrane potential could be used?
 
 Sigmoid-Bernoulli:
+
 $$
 p[n] = \sigma(\textbf{u}[n])
 $$
+
 $$
 \textbf{s}[n] = Bernoulli(p[n])
 $$
+
 $$
 \frac{\delta \textbf{s}[n]}{p[n]} \approx p[n]
 $$
