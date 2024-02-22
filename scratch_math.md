@@ -17,6 +17,7 @@ Perhaps a better alternative would be to include some approximation of a refract
 $$
 p[n] = \sigma(k_1\textbf{u}[n]) \odot sin(k_2\textbf{u}[n])
 $$
+
 Where $k_1$ governs the probabilities around the threshold and $k_2$  is a tunable refractory parameter. 
 $$
 \textbf{s}[n] = Bernoulli(p[n])
@@ -33,6 +34,7 @@ $$
 $$
 \frac{dx(t)}{dt} = Ax(t) + Bu(t)
 $$
+
 $$
 y(t) = Cx(t) + Du(t)
 $$
@@ -42,29 +44,38 @@ SSM Discrete
 $$
 x_k = Ax_{k-1} + Bu_k
 $$
+
 $$
 y_k = Cx_k + Du_k
 $$
+
 LI Discrete:
+
 $$
     V_k = \beta V_{k-1} + WX_k
 $$
 Rewritten:
+
 $$
 x_k = \beta x_{k-1} + Bu(t)
 $$
 
 CuBaLI Discrete
+
 $$
 I_k = \alpha I_{k-1} + WX_k
 $$
+
 $$
 V_k = \beta V_{k-1} + I_k
 $$
+
 Rewritten:
+
 $$
 x_k = \alpha x_{k-1} + Bu_k
 $$
+
 $$
 y_k = x_k + \beta y_{k-1}
 $$
