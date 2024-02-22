@@ -45,7 +45,7 @@ $$
 x_k = Ax_{k-1} + Bu_k
 $$
 
-
+output decoding
 
 $$
 y_k = Cx_k + Du_k
