@@ -32,7 +32,8 @@ $$
 $$
 
 
-
+Also:
+could achieve parallel spiking by just treating it as an erosion operator? size of erosion kernel determines how sparse the net is?
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
