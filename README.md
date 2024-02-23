@@ -13,6 +13,9 @@ https://arxiv.org/abs/2309.03641
 
 https://arxiv.org/abs/2401.00955
 
+Parallel Spiking Unit : https://arxiv.org/abs/2402.00449
+This one is reset aware, unlike SPSN.
+
 S4/S5/Mamba
 
 Liquid Neural Networks??
