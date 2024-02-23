@@ -86,7 +86,7 @@ $$
 y_k = x_k + \beta y_{k-1}
 $$
 
-RCuBaLI Discrete: C is the all-to-all recurrent weight matrix.
+RCuBaLI Discrete: C is the all-to-all recurrent weight matrix. may be tricky to implement.
 
 $$
 x_k = Ax_{k-1} + Bu_k + Cy_{k-1}
