@@ -27,3 +27,6 @@ https://github.com/state-spaces/mamba/issues/133
 Useful questions?
 
 What factors will neuromorphic hardware have to account for to implement NeuroSSMs?
+
+ELM Neuron
+https://arxiv.org/abs/2306.16922
