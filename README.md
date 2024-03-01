@@ -5,7 +5,11 @@ Relevant background works and related works:
 
 Spiking LSTM
 
-LMU/LRU
+LMU
+https://paperswithcode.com/paper/legendre-memory-units-continuous-time
+
+Parallel LMU !!! This could be really relevant.
+https://arxiv.org/abs/2102.11417
 
 SpikeGPT
 
@@ -30,3 +34,10 @@ What factors will neuromorphic hardware have to account for to implement NeuroSS
 
 ELM Neuron
 https://arxiv.org/abs/2306.16922
+
+LRU:
+https://arxiv.org/abs/2303.06349
+
+Griffin/Hawk: a modified LRU
+https://arxiv.org/abs/2402.19427
+
