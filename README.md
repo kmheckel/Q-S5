@@ -38,6 +38,9 @@ https://arxiv.org/abs/2306.16922
 LRU:
 https://arxiv.org/abs/2303.06349
 
+Event Camera SSMs:
+https://arxiv.org/abs/2402.15584
+
 Griffin/Hawk: a modified LRU
 https://arxiv.org/abs/2402.19427
 
