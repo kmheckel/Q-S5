@@ -48,20 +48,6 @@ def discretize_zoh(Lambda, B_tilde, Delta):
     return Lambda_bar, B_bar
 
 
-# Parallel scan operations
-# this poses a challenge for the current quantization scheme as it is not dot product based.
-@jax.vmap
-def binary_operator(q_i, q_j):
-    """Binary operator for parallel scan of linear recurrence. Assumes a diagonal matrix A.
-    Args:
-        q_i: tuple containing A_i and Bu_i at position i       (P,), (P,)
-        q_j: tuple containing A_j and Bu_j at position j       (P,), (P,)
-    Returns:
-        new element ( A_out, Bu_out )
-    """
-    A_i, b_i = q_i
-    A_j, b_j = q_j
-    return A_j * A_i, A_j * b_i + b_j
 
 
 @dataclass
@@ -81,6 +67,27 @@ def quant_dot(general_dot):
             )
     
     return jax.jit(_dot)
+
+# performs quantized elementwise product.
+# not sure hoq to quantize the addition operation within the binary operator...
+def quant_hadamard(general_dot):
+    def vec_prod(a, b):
+        return aqt_dot_general.einsum("i,i->i", a, b, general_dot)
+    return jax.jit(vec_prod)
+
+# Parallel scan operations
+@jax.vmap
+def binary_operator(q_i, q_j):
+    """Binary operator for parallel scan of linear recurrence. Assumes a diagonal matrix A.
+    Args:
+        q_i: tuple containing A_i and Bu_i at position i       (P,), (P,)
+        q_j: tuple containing A_j and Bu_j at position j       (P,), (P,)
+    Returns:
+        new element ( A_out, Bu_out )
+    """
+    A_i, b_i = q_i
+    A_j, b_j = q_j
+    return A_j * A_i, A_j * b_i + b_j
 
 def build_apply_ssm(quant_config: QuantizationConfig) -> Callable:
 
@@ -136,8 +143,8 @@ class S5SSM(nn.Module):
     clip_eigs: bool = False
     bidirectional: bool = False
     step_rescale: float = 1.0
-    q_config: QuantizationConfig
-    apply_ssm = build_apply_ssm(q_config)
+    q_config: QuantizationConfig # might need fixed/adjusted
+    apply_ssm = build_apply_ssm(q_config) # might need fixed/adjusted
 
     """ The S5 SSM
         Args:
@@ -289,6 +296,7 @@ class S5SSM(nn.Module):
         )
 
         # Add feedthrough matrix output Du;
+        # self.D * u can be replaced with the quant vector product einsum now.
         Du = jax.vmap(lambda u: self.D * u)(input_sequence)
         return ys + Du
 
