@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from functools import partial
+from typing import Callable
+
 import aqt.jax.v2.flax.aqt_flax as aqt
 import aqt.jax.v2.aqt_dot_general as aqt_dot_general
 import aqt.jax.v2.config as aqt_config
@@ -60,9 +63,6 @@ def binary_operator(q_i, q_j):
     return A_j * A_i, A_j * b_i + b_j
 
 
-# A_config = aqt_config.fully_quantized(fwd_bits=8, bwd_bits=8)
-
-
 @dataclass
 class QuantizationConfig:
     A_quantizer: aqt_config.DotGeneral
@@ -72,49 +72,59 @@ class QuantizationConfig:
     act_quantizer: aqt_config.DotGeneral
 
 
-def apply_ssm(
-    Lambda_bar,
-    B_bar,
-    C_tilde,
-    input_sequence,
-    conj_sym,
-    bidirectional,
-    quant_config,
-):
-    """Compute the LxH output of discretized SSM given an LxH input.
-    Args:
-        Lambda_bar (complex64): discretized diagonal state matrix    (P,)
-        B_bar      (complex64): discretized input matrix             (P, H)
-        C_tilde    (complex64): output matrix                        (H, P)
-        input_sequence (float32): input sequence of features         (L, H)
-        conj_sym (bool):         whether conjugate symmetry is enforced
-        bidirectional (bool):    whether bidirectional setup is used,
-                              Note for this case C_tilde will have 2P cols
-    Returns:
-        ys (float32): the SSM outputs (S5 layer preactivations)      (L, H)
-    """
-    Lambda_elements = Lambda_bar * np.ones(
-        (input_sequence.shape[0], Lambda_bar.shape[0])
-    )
-    Bu_elements = jax.vmap(  # (((inputs.ndim -1,), (0,)), ((), ())),
-        lambda u: quant_config.B_quantizer(B_bar, u, dimension_numbers=...)
-    )(input_sequence)
-    # Bu_elements = jax.vmap(lambda u: B_bar @ u)(input_sequence)  # Replace
-
-    _, xs = jax.lax.associative_scan(binary_operator, (Lambda_elements, Bu_elements))
-
-    if bidirectional:
-        _, xs2 = jax.lax.associative_scan(
-            binary_operator, (Lambda_elements, Bu_elements), reverse=True
+def build_apply_ssm(quant_config: QuantizationConfig) -> Callable:
+    def _apply_ssm(
+        Lambda_bar,
+        B_bar,
+        C_tilde,
+        input_sequence,
+        conj_sym,
+        bidirectional,
+    ):
+        """Compute the LxH output of discretized SSM given an LxH input.
+        Args:
+            Lambda_bar (complex64): discretized diagonal state matrix    (P,)
+            B_bar      (complex64): discretized input matrix             (P, H)
+            C_tilde    (complex64): output matrix                        (H, P)
+            input_sequence (float32): input sequence of features         (L, H)
+            conj_sym (bool):         whether conjugate symmetry is enforced
+            bidirectional (bool):    whether bidirectional setup is used,
+                                  Note for this case C_tilde will have 2P cols
+        Returns:
+            ys (float32): the SSM outputs (S5 layer preactivations)      (L, H)
+        """
+        Lambda_elements = Lambda_bar * np.ones(
+            (input_sequence.shape[0], Lambda_bar.shape[0])
         )
-        xs = np.concatenate((xs, xs2), axis=-1)
+        Bu_elements = jax.vmap(  # (((inputs.ndim -1,), (0,)), ((), ())),
+            lambda u: quant_config.B_quantizer.fwd(B_bar, u)
+        )(input_sequence)
+        # Bu_elements = jax.vmap(lambda u: B_bar @ u)(input_sequence)  # Replace
 
-    if conj_sym:
-        return jax.vmap(lambda x: 2 * (C_tilde @ x).real)(
-            xs
-        )  # replace @ with dot_general
-    else:
-        return jax.vmap(lambda x: (C_tilde @ x).real)(xs)
+        _, xs = jax.lax.associative_scan(
+            binary_operator, (Lambda_elements, Bu_elements)
+        )
+
+        if bidirectional:
+            _, xs2 = jax.lax.associative_scan(
+                binary_operator, (Lambda_elements, Bu_elements), reverse=True
+            )
+            xs = np.concatenate((xs, xs2), axis=-1)
+
+        if conj_sym:
+            return jax.vmap(
+                lambda x: 2
+                * jnp.dot(
+                    C_tilde,
+                    x,
+                ).real
+            )(
+                xs
+            )  # replace @ with dot_general
+        else:
+            return jax.vmap(lambda x: (C_tilde @ x).real)(xs)
+
+    return jax.jit(_apply_ssm)
 
 
 class S5SSM(nn.Module):
