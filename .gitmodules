@@ -1,0 +1,3 @@
+[submodule "S5fork"]
+	path = S5fork
+	url = https://github.com/stevenabreu7/S5.git
