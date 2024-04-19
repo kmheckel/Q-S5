@@ -11,8 +11,13 @@ import jax.numpy as jnp
 from s5 import ssm, ssm_init, seq_model, train_helpers
 
 def lorenz_ssm(args, init_rng) -> tuple:
+    # Set SSM size and block size
     ssm_size = args.ssm_size_base
     block_size = int(ssm_size / args.blocks)
+
+    # Set global learning rate lr (e.g. encoders, etc.) as function of ssm_lr
+    ssm_lr = args.ssm_lr_base
+    lr = args.lr_factor * ssm_lr
 
     # Initialize state matrix A using approximation to HiPPO-LegS matrix
     Lambda, _, B, V, B_orig = ssm_init.make_DPLR_HiPPO(block_size)
@@ -62,11 +67,11 @@ def lorenz_ssm(args, init_rng) -> tuple:
     state = train_helpers.create_train_state(
         model_cls,
         init_rng,
-        pad=False,
+        padded=False,
         retrieval=False,
-        in_dim=in_dim,
+        in_dim=3,
         bsz=args.bsz,
-        seq_len=seq_len,
+        seq_len=128,
         weight_decay=args.weight_decay,
         batchnorm=args.batchnorm,
         opt_config=args.opt_config,
@@ -74,3 +79,4 @@ def lorenz_ssm(args, init_rng) -> tuple:
         lr=lr,
         dt_global=args.dt_global,
     )
+    return state, ssm_init_fn
