@@ -79,4 +79,4 @@ def lorenz_ssm(args, init_rng) -> tuple:
         lr=lr,
         dt_global=args.dt_global,
     )
-    return state, ssm_init_fn
+    return model_cls, state

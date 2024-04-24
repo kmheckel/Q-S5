@@ -8,6 +8,7 @@ import jax.numpy as jnp
 
 import dataloaders
 from s5.utils.util import str2bool
+from train_quantized import train
 
 
 def run(args):
@@ -24,17 +25,30 @@ def run(args):
     if args.experiment == "lorenz":
         from lorenz.model import lorenz_ssm
 
-        model = lorenz_ssm(args, init_rng)
-    #     (
-    #     trainloader,
-    #     valloader,
-    #     testloader,
-    #     aux_dataloaders,
-    #     n_classes,
-    #     seq_len,
-    #     in_dim,
-    #     train_size,
-    # ) = dataloaders.lorenz_data_fn("lorenz/data/", seed=args.jax_seed, bsz=args.bsz)
+        model, state = lorenz_ssm(args, init_rng)
+
+        (
+            trainloader,
+            valloader,
+            testloader,
+            aux_dataloaders,
+            n_classes,
+            seq_len,
+            in_dim,
+            train_size,
+        ) = dataloaders.lorenz_data_fn("lorenz/data/", seed=args.jax_seed, bsz=args.bsz)
+
+    train(
+        args,
+        model_cls=model,
+        trainloader=trainloader,
+        valloader=valloader,
+        testloader=testloader,
+        seq_len=128,
+        in_dim=4,
+        state=state,
+        train_rng=train_rng,
+    )
 
 
 if __name__ == "__main__":
@@ -61,6 +75,10 @@ if __name__ == "__main__":
         default=128,
         help="Number of features, i.e. H, " "dimension of layer inputs/outputs",
     )
+    parser.add_argument("--epochs", type=int, default=100, help="max number of epochs")
+    parser.add_argument(
+        "--warmup_end", type=int, default=1, help="epoch to end linear warmup"
+    )
     parser.add_argument(
         "--ssm_size_base", type=int, default=256, help="SSM Latent size, i.e. P"
     )
@@ -73,6 +91,7 @@ if __name__ == "__main__":
         default=1,
         help="global learning rate = lr_factor*ssm_lr_base",
     )
+    parser.add_argument("--lr_min", type=float, default=0, help="minimum learning rate")
     parser.add_argument(
         "--weight_decay", type=float, default=0.05, help="weight decay value"
     )
