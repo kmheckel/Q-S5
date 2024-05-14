@@ -4,3 +4,6 @@
 [submodule "aqt"]
 	path = aqt
 	url = https://github.com/stevenabreu7/aqt.git
+[submodule "dysts"]
+	path = dysts
+	url = git@github.com:jegp/dysts
