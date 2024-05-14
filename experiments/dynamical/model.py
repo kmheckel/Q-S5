@@ -8,7 +8,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from s5 import ssm, ssm_init, seq_model, train_helpers
+from s5 import qssm_aqt, ssm_init, qseq_model, train_helpers
 
 def dynamical_ssm(args, init_rng) -> tuple:
     # Set SSM size and block size
@@ -35,7 +35,15 @@ def dynamical_ssm(args, init_rng) -> tuple:
     V = jax.scipy.linalg.block_diag(*([V] * args.blocks))
     Vinv = jax.scipy.linalg.block_diag(*([Vc] * args.blocks))
 
-    ssm_init_fn = ssm.init_S5SSM(
+    q_config = QuantizationConfig(
+        a_precision=args.a_bits,
+        b_precision=args.b_bits,
+        c_precision=args.c_bits,
+        d_precision=args.d_bits,
+        non_ssm_precision=args.non_ssm_bits
+    )
+
+    ssm_init_fn = ssm.init_qS5SSM(
         H=args.d_model,
         P=ssm_size,
         Lambda_re_init=Lambda.real,
@@ -49,13 +57,15 @@ def dynamical_ssm(args, init_rng) -> tuple:
         conj_sym=args.conj_sym,
         clip_eigs=args.clip_eigs,
         bidirectional=args.bidirectional,
+        q_config=q_config
     )
 
     model_cls = partial(
-        seq_model.StackedEncoderModel,
+        seq_model.QStackedEncoderModel,
         ssm=ssm_init_fn,
         d_model=args.d_model,
         n_layers=args.n_layers,
+        non_ssm_precision=q_config.non_ssm_precision,
         activation=args.activation_fn,
         dropout=args.p_dropout,
         training=True,

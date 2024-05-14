@@ -53,10 +53,11 @@ if __name__ == "__main__":
     parser.add_argument("experiment", type=str, choices=["lorenz"])
 
     # Quant flags
-    parser.add_argument("--aquant", type=int, nargs="?", default=None)
-    parser.add_argument("--bquant", type=int, nargs="?", default=None)
-    parser.add_argument("--cquant", type=int, nargs="?", default=None)
-    parser.add_argument("--dquant", type=int, nargs="?", default=None)
+    parser.add_argument("--a_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--b_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--c_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--d_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--non_ssm_bits", type=int, nargs="?", default=None)
     parser.add_argument("--actquant", type=int, nargs="?", default=None)
 
     # S5 flags
