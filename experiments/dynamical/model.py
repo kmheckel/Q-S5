@@ -10,7 +10,7 @@ import jax.numpy as jnp
 
 from s5 import ssm, ssm_init, seq_model, train_helpers
 
-def lorenz_ssm(args, init_rng) -> tuple:
+def dynamical_ssm(args, init_rng) -> tuple:
     # Set SSM size and block size
     ssm_size = args.ssm_size_base
     block_size = int(ssm_size / args.blocks)

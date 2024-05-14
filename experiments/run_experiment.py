@@ -19,13 +19,10 @@ def run(args):
 
     quantization_config = ...
 
-    # Create dataset...
-    # init_rng, key = jax.random.split(init_rng, num=2)
+    if args.experiment == "dynamical":
+        from experiments.dynamical.model import dynamical_ssm
 
-    if args.experiment == "lorenz":
-        from lorenz.model import lorenz_ssm
-
-        model, state = lorenz_ssm(args, init_rng)
+        model, state = dynamical_ssm(args, init_rng)
 
         (
             trainloader,
@@ -36,7 +33,7 @@ def run(args):
             seq_len,
             in_dim,
             train_size,
-        ) = dataloaders.lorenz_data_fn("lorenz/data/", seed=args.jax_seed, bsz=args.bsz)
+        ) = dataloaders.dysts_data_fn("dynamical/data/", seed=key, bsz=args.bsz)
 
     train(
         args,
