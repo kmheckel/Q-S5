@@ -2,6 +2,7 @@ import argparse
 import sys
 
 sys.path.append("../S5fork")
+#sys.path.append("../../S5")
 
 import jax
 import jax.numpy as jnp
@@ -50,7 +51,7 @@ def run(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("experiment", type=str, choices=["lorenz", "dynamical_all"])
+    parser.add_argument("--experiment", type=str, choices=["lorenz", "dynamical_all"])
 
     # Quant flags
     parser.add_argument("--a_bits", type=int, nargs="?", default=None)
