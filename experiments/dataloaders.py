@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 
 import torch
 import jax.numpy as jnp
@@ -17,16 +17,27 @@ ReturnType = Tuple[
     int,
 ]
 
+
 def list_datasets(path: str) -> list:
     return [p for p in Path(path).glob("*.npy")]
 
 
 class DystsDataset(torch.utils.data.Dataset):
 
-    def __init__(self, path: str, timesteps: int, train: bool):
+    def __init__(
+        self, path: str, timesteps: int, train: bool, forecast: Optional[int] = None
+    ):
+        """
+        Args:
+            path (str): Path to the dataset
+            timesteps (int): Number of timesteps to consider
+            train (bool): Whether to use the training or validation set
+            forecast (Optional[int]): Number of timesteps to forecast, defaults to timesteps
+        """
         self.data = jnp.load(path)
         self.timesteps = timesteps
-        self.indices = jnp.arange(len(self.data) // self.timesteps)
+        self.forecast = forecast if forecast is not None else timesteps
+        self.indices = jnp.arange(len(self.data) // (self.timesteps + self.forecast))
         fraction = int(len(self.indices) * 0.8)
         self.indices = self.indices[:fraction] if train else self.indices[fraction:]
 
@@ -35,13 +46,15 @@ class DystsDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         start_index = idx * self.timesteps
-        end_index = start_index + self.timesteps
-        return self.data[start_index:end_index]
+        mid_index = start_index + self.timesteps
+        end_index = mid_index + self.forecast
+        return self.data[start_index:mid_index], self.data[mid_index:end_index]
 
 
 def dysts_collate_fn(batch):
-    stacked = jnp.stack(batch)
-    return stacked[:, :-1], stacked[:, 1:]
+    xs = jnp.stack([x for x, _ in batch])
+    ys = jnp.stack([y for _, y in batch])
+    return xs, ys
 
 
 def dysts_data_loader(path, timesteps, bsz, train=True):
@@ -51,7 +64,7 @@ def dysts_data_loader(path, timesteps, bsz, train=True):
     )
 
 
-def lorenz_data_fn(path, timesteps, seed, bsz) -> ReturnType:
+def dysts_data_fn(path, timesteps, seed, bsz) -> ReturnType:
     trainset = dysts_data_loader(path, timesteps, bsz, train=True)
     valset = dysts_data_loader(path, timesteps, bsz, train=False)
     testset = None

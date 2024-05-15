@@ -35,7 +35,7 @@ def dynamical_ssm(args, init_rng) -> tuple:
     V = jax.scipy.linalg.block_diag(*([V] * args.blocks))
     Vinv = jax.scipy.linalg.block_diag(*([Vc] * args.blocks))
 
-    q_config = QuantizationConfig(
+    q_config = qssm_aqt.QuantizationConfig(
         a_precision=args.a_bits,
         b_precision=args.b_bits,
         c_precision=args.c_bits,
@@ -43,7 +43,7 @@ def dynamical_ssm(args, init_rng) -> tuple:
         non_ssm_precision=args.non_ssm_bits
     )
 
-    ssm_init_fn = ssm.init_qS5SSM(
+    ssm_init_fn = qssm_aqt.init_qS5SSM(
         H=args.d_model,
         P=ssm_size,
         Lambda_re_init=Lambda.real,
@@ -61,7 +61,7 @@ def dynamical_ssm(args, init_rng) -> tuple:
     )
 
     model_cls = partial(
-        seq_model.QStackedEncoderModel,
+        qseq_model.QStackedEncoderModel,
         ssm=ssm_init_fn,
         d_model=args.d_model,
         n_layers=args.n_layers,

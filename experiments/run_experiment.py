@@ -17,10 +17,8 @@ def run(args):
     key = jax.random.PRNGKey(args.jax_seed)
     init_rng, train_rng = jax.random.split(key, num=2)
 
-    quantization_config = ...
-
-    if args.experiment == "dynamical":
-        from experiments.dynamical.model import dynamical_ssm
+    if args.experiment == "lorenz":
+        from dynamical.model import dynamical_ssm
 
         model, state = dynamical_ssm(args, init_rng)
 
@@ -33,7 +31,9 @@ def run(args):
             seq_len,
             in_dim,
             train_size,
-        ) = dataloaders.dysts_data_fn("dynamical/data/", seed=key, bsz=args.bsz)
+        ) = dataloaders.dysts_data_fn("dynamical/data/Lorenz.npy", timesteps=args.timesteps, seed=key, bsz=args.bsz)
+    else:
+        raise NotImplementedError()
 
     train(
         args,
@@ -50,7 +50,7 @@ def run(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("experiment", type=str, choices=["lorenz"])
+    parser.add_argument("experiment", type=str, choices=["lorenz", "dynamical_all"])
 
     # Quant flags
     parser.add_argument("--a_bits", type=int, nargs="?", default=None)
@@ -59,6 +59,9 @@ if __name__ == "__main__":
     parser.add_argument("--d_bits", type=int, nargs="?", default=None)
     parser.add_argument("--non_ssm_bits", type=int, nargs="?", default=None)
     parser.add_argument("--actquant", type=int, nargs="?", default=None)
+
+    # Dataset flags
+    parser.add_argument("--timesteps", type=int, default=200, help="number of timesteps for dynamical systems")
 
     # S5 flags
     parser.add_argument(
@@ -184,11 +187,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(
         f"""Running experiment: {args.experiment} experiment with quantization bits
-    a  : {args.aquant}
-    b  : {args.bquant}
-    c  : {args.cquant}
-    d  : {args.dquant}
-    act: {args.actquant}
+    a   : {args.a_bits}
+    b   : {args.b_bits}
+    c   : {args.c_bits}
+    d   : {args.d_bits}
+    act : {args.actquant}
+    misc: {args.non_ssm_bits}
     """
     )
     run(args)
