@@ -1,0 +1,17 @@
+Element-wise multiplication (Hadamard product) in 8-bit with vectors (1000,)
+Full precision execution time: 91.26us +-  5.36us
+Full precision execution time: 90.96us +-  2.02us
+Quantized execution time:      98.75us +- 30.06us
+Quantized execution time:      94.54us +-  1.06us
+Matrix multiplication (dot product) in 8-bit with matrices (1000, 1000)
+Full precision execution time:  0.35ms +-  0.17ms
+Full precision execution time:  0.25ms +-  0.01ms
+Quantized execution time:       0.32ms +-  0.39ms
+Quantized execution time:       0.19ms +-  0.00ms
+Matrix multiplication (dot product) with complex matrices (1000, 1000)
+Native execution time:        0.92ms +-  0.07ms
+Native execution time:        0.90ms +-  0.01ms
+Manual execution time:        1.19ms +-  0.36ms
+Manual execution time:        1.07ms +-  0.01ms
+Manual quant execution time:  0.88ms +-  0.88ms
+Manual quant execution time:  0.58ms +-  0.01ms
