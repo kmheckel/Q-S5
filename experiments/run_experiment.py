@@ -1,5 +1,6 @@
 import argparse
 import sys
+import pathlib
 
 sys.path.append("../S5fork")
 #sys.path.append("../../S5")
@@ -21,6 +22,7 @@ def run(args):
     if args.experiment == "lorenz":
         from dynamical.model import dynamical_ssm
 
+        data_path = pathlib.Path(".") / "experiments" / "dynamical" / "data" / "Lorenz.npy"
         model, state = dynamical_ssm(args, init_rng)
 
         (
@@ -32,7 +34,7 @@ def run(args):
             seq_len,
             in_dim,
             train_size,
-        ) = dataloaders.dysts_data_fn("dynamical/data/Lorenz.npy", timesteps=args.timesteps, seed=key, bsz=args.bsz)
+        ) = dataloaders.dysts_data_fn(str(data_path), timesteps=args.timesteps, seed=key, bsz=args.bsz)
     else:
         raise NotImplementedError()
 
