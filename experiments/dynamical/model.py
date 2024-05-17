@@ -10,7 +10,7 @@ import jax.numpy as jnp
 
 from s5 import qssm_aqt, ssm_init, qseq_model, train_helpers
 
-def dynamical_ssm(args, init_rng) -> tuple:
+def dynamical_ssm(args, seq_len, init_rng) -> tuple:
     # Set SSM size and block size
     ssm_size = args.ssm_size_base
     block_size = int(ssm_size / args.blocks)
@@ -81,7 +81,7 @@ def dynamical_ssm(args, init_rng) -> tuple:
         retrieval=False,
         in_dim=3,
         bsz=args.bsz,
-        seq_len=128,
+        seq_len=seq_len,
         weight_decay=args.weight_decay,
         batchnorm=args.batchnorm,
         opt_config=args.opt_config,

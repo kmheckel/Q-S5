@@ -68,6 +68,6 @@ def dysts_data_fn(path, timesteps, seed, bsz) -> ReturnType:
     trainset = dysts_data_loader(path, timesteps, bsz, train=True)
     valset = dysts_data_loader(path, timesteps, bsz, train=False)
     testset = None
-    seq_len = 128
-    in_dim = 3
+    seq_len = timesteps
+    in_dim = trainset.dataset[0][0].shape[-1]
     return trainset, valset, testset, {}, None, seq_len, in_dim, len(trainset)

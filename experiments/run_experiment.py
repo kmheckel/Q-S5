@@ -22,9 +22,7 @@ def run(args):
     if args.experiment == "lorenz":
         from dynamical.model import dynamical_ssm
 
-        data_path = pathlib.Path(".") / "experiments" / "dynamical" / "data" / "Lorenz.npy"
-        model, state = dynamical_ssm(args, init_rng)
-
+        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "Lorenz.npy"
         (
             trainloader,
             valloader,
@@ -34,7 +32,13 @@ def run(args):
             seq_len,
             in_dim,
             train_size,
-        ) = dataloaders.dysts_data_fn(str(data_path), timesteps=args.timesteps, seed=key, bsz=args.bsz)
+        ) = dataloaders.dysts_data_fn(
+            str(data_path), timesteps=args.timesteps, seed=key, bsz=args.bsz
+        )
+
+        args.d_model = in_dim
+        model, state = dynamical_ssm(args, seq_len, init_rng)
+
     else:
         raise NotImplementedError()
 
@@ -44,8 +48,8 @@ def run(args):
         trainloader=trainloader,
         valloader=valloader,
         testloader=testloader,
-        seq_len=128,
-        in_dim=4,
+        seq_len=seq_len,
+        in_dim=in_dim,
         state=state,
         train_rng=train_rng,
     )
@@ -64,7 +68,12 @@ if __name__ == "__main__":
     parser.add_argument("--actquant", type=int, nargs="?", default=None)
 
     # Dataset flags
-    parser.add_argument("--timesteps", type=int, default=200, help="number of timesteps for dynamical systems")
+    parser.add_argument(
+        "--timesteps",
+        type=int,
+        default=200,
+        help="number of timesteps for dynamical systems",
+    )
 
     # S5 flags
     parser.add_argument(
@@ -72,12 +81,6 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--n_layers", type=int, default=6, help="Number of layers in the network"
-    )
-    parser.add_argument(
-        "--d_model",
-        type=int,
-        default=128,
-        help="Number of features, i.e. H, " "dimension of layer inputs/outputs",
     )
     parser.add_argument("--epochs", type=int, default=100, help="max number of epochs")
     parser.add_argument(
