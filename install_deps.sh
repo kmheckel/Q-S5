@@ -1,3 +1,5 @@
+## make sure you are using python 3.10.10
+# pyenv global 3.10.10
 python -m venv venv
 source venv/bin/activate
 
