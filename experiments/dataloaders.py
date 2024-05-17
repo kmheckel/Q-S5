@@ -19,7 +19,7 @@ ReturnType = Tuple[
 
 
 def list_datasets(path: str) -> list:
-    return [p for p in Path(path).glob("*.npy")]
+    return [p for p in Path(path).children() if p.is_dir()]
 
 
 class DystsDataset(torch.utils.data.Dataset):
@@ -34,21 +34,28 @@ class DystsDataset(torch.utils.data.Dataset):
             train (bool): Whether to use the training or validation set
             forecast (Optional[int]): Number of timesteps to forecast, defaults to timesteps
         """
-        self.data = jnp.load(path)
+        if isinstance(path, str):
+            path = Path(path)
+        self.files = list(path.glob("**/*.npy"))
+        self.files = sorted(self.files)
         self.timesteps = timesteps
+        fraction = int(len(self.files) * 0.8)
         self.forecast = forecast if forecast is not None else timesteps
-        self.indices = jnp.arange(len(self.data) // (self.timesteps + self.forecast))
-        fraction = int(len(self.indices) * 0.8)
-        self.indices = self.indices[:fraction] if train else self.indices[fraction:]
+        self.files = self.files[:fraction] if train else self.files[fraction:]
+        n_steps = jnp.load(self.files[0]).shape[0]
+        if n_steps < self.timesteps + self.forecast:
+            raise ValueError(f"Number of data timesteps ({n_steps}) is < timesteps + forecast")
+        
+        # self.data = jnp.stack([jnp.load(f) for f in self.files])
 
     def __len__(self):
-        return len(self.indices)
+        return len(self.files)
 
     def __getitem__(self, idx):
-        start_index = idx * self.timesteps
-        mid_index = start_index + self.timesteps
+        data = jnp.load(self.files[idx])
+        mid_index = self.timesteps
         end_index = mid_index + self.forecast
-        return self.data[start_index:mid_index], self.data[mid_index:end_index]
+        return data[:mid_index], data[mid_index:end_index]
 
 
 def dysts_collate_fn(batch):
@@ -66,8 +73,8 @@ def dysts_data_loader(path, timesteps, bsz, train=True):
 
 def dysts_data_fn(path, timesteps, seed, bsz) -> ReturnType:
     trainset = dysts_data_loader(path, timesteps, bsz, train=True)
-    valset = dysts_data_loader(path, timesteps, bsz, train=False)
-    testset = None
+    testset = dysts_data_loader(path, timesteps, bsz, train=False)
+    valset = None
     seq_len = timesteps
     in_dim = trainset.dataset[0][0].shape[-1]
     return trainset, valset, testset, {}, None, seq_len, in_dim, len(trainset)

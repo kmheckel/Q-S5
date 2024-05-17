@@ -4,6 +4,8 @@ sys.path.append("../S5fork")
 
 import jax
 
+import wandb
+
 from s5.train_helpers import (
     create_train_state,
     reduce_lr_on_plateau,
@@ -25,22 +27,25 @@ def train(
     in_dim,
     state,
     train_rng,
-    loss_fn
+    loss_fn,
 ):
     # Set global learning rate lr (e.g. encoders, etc.) as function of ssm_lr
     ssm_lr = args.ssm_lr_base
     lr = args.lr_factor * ssm_lr
 
     # Training Loop over epochs
-    best_loss, best_acc, best_epoch = (
+    best_loss, best_epoch = (
         100000000,
-        -100000000.0,
         0,
     )  # This best loss is val_loss
-    count, best_val_loss = 0, 100000000  # This line is for early stopping purposes
+    count, best_val_loss, best_test_loss = (
+        0,
+        1e9,
+        1e9,
+    )  # This line is for early stopping purposes
     lr_count, opt_acc = 0, -100000000.0  # This line is for learning rate decay
     step = 0  # for per step learning rate decay
-    steps_per_epoch = int(len(trainloader) / args.bsz)
+    steps_per_epoch = int(len(trainloader))
     for epoch in range(args.epochs):
         print(f"[*] Starting Training Epoch {epoch + 1}...")
 
@@ -83,58 +88,77 @@ def train(
             in_dim,
             batchnorm=args.batchnorm,
             lr_params=lr_params,
-            loss_fn=loss_fn
+            loss_fn=loss_fn,
         )
 
         if valloader is not None:
             print(f"[*] Running Epoch {epoch + 1} Validation...")
-            val_loss, val_acc = validate(
-                state, model_cls, valloader, seq_len, in_dim, args.batchnorm
+            val_loss, _ = validate(
+                state,
+                skey,
+                model_cls,
+                valloader,
+                seq_len,
+                in_dim,
+                args.batchnorm,
+                loss_fn=loss_fn,
+                calculate_acc=False,
             )
 
             print(f"[*] Running Epoch {epoch + 1} Test...")
-            test_loss, test_acc = validate(
-                state, model_cls, testloader, seq_len, in_dim, args.batchnorm
+            test_loss, _ = validate(
+                state,
+                skey,
+                model_cls,
+                testloader,
+                seq_len,
+                in_dim,
+                args.batchnorm,
+                loss_fn=loss_fn,
+                calculate_acc=False,
             )
 
             print(f"\n=>> Epoch {epoch + 1} Metrics ===")
             print(
                 f"\tTrain Loss: {train_loss:.5f} -- Val Loss: {val_loss:.5f} --Test Loss: {test_loss:.5f} --"
-                f" Val Accuracy: {val_acc:.4f}"
-                f" Test Accuracy: {test_acc:.4f}"
             )
 
         else:
             # # else use test set as validation set (e.g. IMDB)
-            # print(f"[*] Running Epoch {epoch + 1} Test...")
-            # val_loss, val_acc = validate(
-            #     state, model_cls, testloader, seq_len, in_dim, args.batchnorm
-            # )
-
-            print(f"\n=>> Epoch {epoch + 1} Metrics ===")
-            print(
-                f"\tTrain Loss: {train_loss:.5f}  --Test Loss: {val_loss:.5f} --"
-                f" Test Accuracy: {val_acc:.4f}"
+            print(f"[*] Running Epoch {epoch + 1} Test...")
+            val_loss, _ = validate(
+                state,
+                skey,
+                model_cls,
+                testloader,
+                seq_len,
+                in_dim,
+                args.batchnorm,
+                loss_fn=loss_fn,
+                calculate_acc=False,
             )
 
+            print(f"\n=>> Epoch {epoch + 1} Metrics ===")
+            print(f"\tTrain Loss: {train_loss:.5f}  --Test Loss: {val_loss:.5f} --")
+
         # For early stopping purposes
-        if val_loss < best_val_loss:
+        if val_loss > best_val_loss:
             count = 0
             best_val_loss = val_loss
         else:
             count += 1
 
-        if val_acc > best_acc:
+        if val_loss < best_loss:
             # Increment counters etc.
             count = 0
-            best_loss, best_acc, best_epoch = val_loss, val_acc, epoch
+            best_loss, best_epoch = val_loss, epoch
             if valloader is not None:
-                best_test_loss, best_test_acc = test_loss, test_acc
+                best_test_loss = test_loss
             else:
-                best_test_loss, best_test_acc = best_loss, best_acc
+                best_test_loss = best_loss
 
         # For learning rate decay purposes:
-        input = lr, ssm_lr, lr_count, val_acc, opt_acc
+        input = lr, ssm_lr, lr_count, 0, opt_acc
         lr, ssm_lr, lr_count, opt_acc = reduce_lr_on_plateau(
             input,
             factor=args.reduce_factor,
@@ -142,10 +166,22 @@ def train(
             lr_min=args.lr_min,
         )
 
-        # Print best accuracy & loss so far...
-        print(
-            f"\tBest Val Loss: {best_loss:.5f} -- Best Val Accuracy:"
-            f" {best_acc:.4f} at Epoch {best_epoch + 1}\n"
-            f"\tBest Test Loss: {best_test_loss:.5f} -- Best Test Accuracy:"
-            f" {best_test_acc:.4f} at Epoch {best_epoch + 1}\n"
+        wandb.log(
+            {
+                "Training Loss": train_loss,
+                "Val loss": val_loss,
+                "count": count,
+                "Learning rate count": lr_count,
+                "Opt acc": opt_acc,
+                "lr": state.opt_state.inner_states["regular"].inner_state.hyperparams[
+                    "learning_rate"
+                ],
+                "ssm_lr": state.opt_state.inner_states["ssm"].inner_state.hyperparams[
+                    "learning_rate"
+                ],
+            }
         )
+
+        wandb.run.summary["Best Val Loss"] = best_loss
+        wandb.run.summary["Best Epoch"] = best_epoch
+        wandb.run.summary["Best Test Loss"] = best_test_loss

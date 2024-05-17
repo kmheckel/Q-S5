@@ -20,7 +20,9 @@ def generate(directory, runs, **kwargs):
   for i in tqdm.trange(runs):
     dataset = make_trajectory_ensemble(random_state=i, **kwargs)
     for k, v in dataset.items():
-      filename = directory / f"{i}_{k}"
+      if not (directory / f"{k}").exists():
+        (directory / f"{k}").mkdir(parents=True)
+      filename = directory / f"{k}" / f"{i}"
       np.save(filename, v)
 
 # %%

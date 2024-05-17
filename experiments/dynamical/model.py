@@ -7,6 +7,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import wandb
 
 from s5 import qssm_aqt, ssm_init, qseq_model, train_helpers
 
@@ -14,6 +15,7 @@ def dynamical_ssm(args, seq_len, in_dim, init_rng) -> tuple:
     # Set SSM size and block size
     ssm_size = args.ssm_size_base
     block_size = int(ssm_size / args.blocks)
+    wandb.log({"block_size": block_size})
 
     # Set global learning rate lr (e.g. encoders, etc.) as function of ssm_lr
     ssm_lr = args.ssm_lr_base
