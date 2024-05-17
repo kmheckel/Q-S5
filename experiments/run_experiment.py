@@ -7,6 +7,7 @@ sys.path.append("../S5fork")
 
 import jax
 import jax.numpy as jnp
+import optax
 
 import dataloaders
 from s5.utils.util import str2bool
@@ -37,7 +38,8 @@ def run(args):
         )
 
         args.d_model = in_dim
-        model, state = dynamical_ssm(args, seq_len, init_rng)
+        model, state = dynamical_ssm(args, seq_len, in_dim, init_rng)
+        loss_fn = optax.squared_error
 
     else:
         raise NotImplementedError()
@@ -52,6 +54,7 @@ def run(args):
         in_dim=in_dim,
         state=state,
         train_rng=train_rng,
+        loss_fn=loss_fn
     )
 
 
@@ -64,14 +67,15 @@ if __name__ == "__main__":
     parser.add_argument("--b_bits", type=int, nargs="?", default=None)
     parser.add_argument("--c_bits", type=int, nargs="?", default=None)
     parser.add_argument("--d_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--ssm_act_bits", type=int, nargs="?", default=None)
     parser.add_argument("--non_ssm_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--actquant", type=int, nargs="?", default=None)
+    parser.add_argument("--non_ssm_act_bits", type=int, nargs="?", default=None)
 
     # Dataset flags
     parser.add_argument(
         "--timesteps",
         type=int,
-        default=200,
+        default=20,
         help="number of timesteps for dynamical systems",
     )
 
@@ -147,7 +151,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--activation_fn",
-        default="half_glu1",
+        default="gelu",
         type=str,
         choices=["full_glu", "half_glu1", "half_glu2", "gelu"],
     )
@@ -197,8 +201,9 @@ if __name__ == "__main__":
     b   : {args.b_bits}
     c   : {args.c_bits}
     d   : {args.d_bits}
-    act : {args.actquant}
+    act : {args.ssm_act_bits}
     misc: {args.non_ssm_bits}
+    nact: {args.non_ssm_act_bits}
     """
     )
     run(args)

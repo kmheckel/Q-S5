@@ -25,6 +25,7 @@ def train(
     in_dim,
     state,
     train_rng,
+    loss_fn
 ):
     # Set global learning rate lr (e.g. encoders, etc.) as function of ssm_lr
     ssm_lr = args.ssm_lr_base
@@ -80,8 +81,9 @@ def train(
             trainloader,
             seq_len,
             in_dim,
-            args.batchnorm,
-            lr_params,
+            batchnorm=args.batchnorm,
+            lr_params=lr_params,
+            loss_fn=loss_fn
         )
 
         if valloader is not None:
