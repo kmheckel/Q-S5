@@ -3,10 +3,12 @@ import sys
 import pathlib
 
 sys.path.append("../S5fork")
-#sys.path.append("../../S5")
+# sys.path.append("../../S5")
 
 import jax
 import jax.numpy as jnp
+import optax
+import wandb
 
 import dataloaders
 from s5.utils.util import str2bool
@@ -14,6 +16,9 @@ from train_quantized import train
 
 
 def run(args):
+    # Setup logging
+    wandb.init(mode='offline', project=args.experiment)
+
     # Set randomness...
     print("[*] Setting Randomness...")
     key = jax.random.PRNGKey(args.jax_seed)
@@ -22,7 +27,7 @@ def run(args):
     if args.experiment == "lorenz":
         from dynamical.model import dynamical_ssm
 
-        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "Lorenz.npy"
+        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "Lorenz"
         (
             trainloader,
             valloader,
@@ -37,7 +42,8 @@ def run(args):
         )
 
         args.d_model = in_dim
-        model, state = dynamical_ssm(args, seq_len, init_rng)
+        model, state = dynamical_ssm(args, seq_len, in_dim, init_rng)
+        loss_fn = optax.squared_error
 
     else:
         raise NotImplementedError()
@@ -52,6 +58,7 @@ def run(args):
         in_dim=in_dim,
         state=state,
         train_rng=train_rng,
+        loss_fn=loss_fn,
     )
 
 
@@ -64,30 +71,31 @@ if __name__ == "__main__":
     parser.add_argument("--b_bits", type=int, nargs="?", default=None)
     parser.add_argument("--c_bits", type=int, nargs="?", default=None)
     parser.add_argument("--d_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--ssm_act_bits", type=int, nargs="?", default=None)
     parser.add_argument("--non_ssm_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--actquant", type=int, nargs="?", default=None)
+    parser.add_argument("--non_ssm_act_bits", type=int, nargs="?", default=None)
 
     # Dataset flags
     parser.add_argument(
         "--timesteps",
         type=int,
-        default=200,
+        default=512,
         help="number of timesteps for dynamical systems",
     )
 
     # S5 flags
     parser.add_argument(
-        "--blocks", type=int, default=8, help="How many blocks, J, to initialize with"
+        "--blocks", type=int, default=2, help="How many blocks, J, to initialize with"
     )
     parser.add_argument(
-        "--n_layers", type=int, default=6, help="Number of layers in the network"
+        "--n_layers", type=int, default=2, help="Number of layers in the network"
     )
-    parser.add_argument("--epochs", type=int, default=100, help="max number of epochs")
+    parser.add_argument("--epochs", type=int, default=1000, help="max number of epochs")
     parser.add_argument(
         "--warmup_end", type=int, default=1, help="epoch to end linear warmup"
     )
     parser.add_argument(
-        "--ssm_size_base", type=int, default=256, help="SSM Latent size, i.e. P"
+        "--ssm_size_base", type=int, default=8, help="SSM Latent size, i.e. P"
     )
     parser.add_argument(
         "--ssm_lr_base", type=float, default=1e-3, help="initial ssm learning rate"
@@ -99,6 +107,20 @@ if __name__ == "__main__":
         help="global learning rate = lr_factor*ssm_lr_base",
     )
     parser.add_argument("--lr_min", type=float, default=0, help="minimum learning rate")
+    parser.add_argument(
+        "--lr_patience",
+        type=int,
+        default=1000000,
+        help="patience before decaying learning rate for lr_decay_on_val_plateau",
+    )
+    parser.add_argument(
+        "--reduce_factor",
+        type=float,
+        default=1.0,
+        help="factor to decay learning rate for lr_decay_on_val_plateau",
+    )
+    parser.add_argument("--cosine_anneal", type=str2bool, default=True,
+						help="whether to use cosine annealing schedule")
     parser.add_argument(
         "--weight_decay", type=float, default=0.05, help="weight decay value"
     )
@@ -147,7 +169,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--activation_fn",
-        default="half_glu1",
+        default="gelu",
         type=str,
         choices=["full_glu", "half_glu1", "half_glu2", "gelu"],
     )
@@ -197,8 +219,9 @@ if __name__ == "__main__":
     b   : {args.b_bits}
     c   : {args.c_bits}
     d   : {args.d_bits}
-    act : {args.actquant}
+    act : {args.ssm_act_bits}
     misc: {args.non_ssm_bits}
+    nact: {args.non_ssm_act_bits}
     """
     )
     run(args)

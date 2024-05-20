@@ -7,13 +7,15 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+import wandb
 
 from s5 import qssm_aqt, ssm_init, qseq_model, train_helpers
 
-def dynamical_ssm(args, seq_len, init_rng) -> tuple:
+def dynamical_ssm(args, seq_len, in_dim, init_rng) -> tuple:
     # Set SSM size and block size
     ssm_size = args.ssm_size_base
     block_size = int(ssm_size / args.blocks)
+    wandb.log({"block_size": block_size})
 
     # Set global learning rate lr (e.g. encoders, etc.) as function of ssm_lr
     ssm_lr = args.ssm_lr_base
@@ -40,7 +42,9 @@ def dynamical_ssm(args, seq_len, init_rng) -> tuple:
         b_precision=args.b_bits,
         c_precision=args.c_bits,
         d_precision=args.d_bits,
-        non_ssm_precision=args.non_ssm_bits
+        non_ssm_precision=args.non_ssm_bits,
+        ssm_act_precision=args.ssm_act_bits,
+        non_ssm_act_precision=args.non_ssm_act_bits,
     )
 
     ssm_init_fn = qssm_aqt.init_qS5SSM(
@@ -61,11 +65,12 @@ def dynamical_ssm(args, seq_len, init_rng) -> tuple:
     )
 
     model_cls = partial(
-        qseq_model.QStackedEncoderModel,
+        qseq_model.QBatchRegressionModel,
         ssm=ssm_init_fn,
         d_model=args.d_model,
+        d_output=in_dim,
         n_layers=args.n_layers,
-        non_ssm_precision=q_config.non_ssm_precision,
+        q_bits_aw=(q_config.non_ssm_act_precision, q_config.non_ssm_precision),
         activation=args.activation_fn,
         dropout=args.p_dropout,
         training=True,
@@ -79,7 +84,7 @@ def dynamical_ssm(args, seq_len, init_rng) -> tuple:
         init_rng,
         padded=False,
         retrieval=False,
-        in_dim=3,
+        in_dim=in_dim,
         bsz=args.bsz,
         seq_len=seq_len,
         weight_decay=args.weight_decay,

@@ -10,19 +10,27 @@ import tempfile
 import json
 import pathlib
 import numpy as np
+import tqdm
 
-def generate(directory, **kwargs):
+def generate(directory, runs, **kwargs):
   directory = pathlib.Path(directory)
   if not directory.exists():
     directory.mkdir(parents=True)
     
-  dataset = make_trajectory_ensemble(**kwargs)
-  for k, v in dataset.items():
-    filename = directory / k
-    np.save(filename, v)
+  for i in tqdm.trange(runs):
+    dataset = make_trajectory_ensemble(random_state=i, **kwargs)
+    for k, v in dataset.items():
+      if not (directory / f"{k}").exists():
+        (directory / f"{k}").mkdir(parents=True)
+      filename = directory / f"{k}" / f"{i}"
+      np.save(filename, v)
 
 # %%
+# Generate Lorenz
 granularity = 100 # 100 = Fine
-generate("data", n = 20000, resample=True, pts_per_period=granularity, random_state=1, use_tqdm=True)
+generate("data", runs = 1024, n = 1024, resample=True, pts_per_period=granularity, subset=["Lorenz"])
 
-
+# %%
+# Generate all
+#granularity = 100 # 100 = Fine
+#generate("data", runs = 1024, n = 1024, resample=True, pts_per_period=granularity, use_tqdm=True, subset="Lorenz")
