@@ -45,6 +45,9 @@ def run(args):
         model, state = dynamical_ssm(args, seq_len, in_dim, init_rng)
         loss_fn = optax.squared_error
 
+    elif args.experiment == "mackey_glass":
+        pass
+
     else:
         raise NotImplementedError()
 
