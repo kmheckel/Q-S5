@@ -46,7 +46,26 @@ def run(args):
         loss_fn = optax.squared_error
 
     elif args.experiment == "mackey_glass":
-        pass
+        from dynamical.model import dynamical_ssm
+
+        # modify this to be a loop over the various tau values and their directories.
+        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "MackeyGlass"
+        (
+            trainloader,
+            valloader,
+            testloader,
+            aux_dataloaders,
+            n_classes,
+            seq_len,
+            in_dim,
+            train_size,
+        ) = dataloaders.dysts_data_fn(
+            str(data_path), timesteps=args.timesteps, seed=key, bsz=args.bsz
+        )
+
+        args.d_model = in_dim
+        model, state = dynamical_ssm(args, seq_len, in_dim, init_rng)
+        loss_fn = optax.squared_error
 
     else:
         raise NotImplementedError()

@@ -15,19 +15,21 @@ def make_gen_trajectory(**kwargs):
 
   return gen_trajectory
 
-def generate(directory, runs, stride=1, **kwargs):
+def generate(directory, runs, max_tau=30, stride=1, **kwargs):
   directory = pathlib.Path(directory)
   if not directory.exists():
     directory.mkdir(parents=True)
 
   gen_mg = make_gen_trajectory(**kwargs)
 
-  for tau in tqdm.trange(1, 31, stride):
+  for tau in tqdm.trange(1, max_tau+1, stride):
     sampled_trajectory_futures = [gen_mg.remote(tau) for i in range(runs)]
-    sampled_trajectories = np.array(ray.get(sampled_trajectory_futures))
+    sampled_trajectories = ray.get(sampled_trajectory_futures)
     if not (directory / f"MackeyGlass").exists():
       (directory / f"MackeyGlass").mkdir(parents=True)
-    filename = directory / f"MackeyGlass" / f"{tau}"
-    np.save(filename, sampled_trajectories)
+    (directory / f"MackeyGlass" / f"tau_{tau}").mkdir(parents=True)
+    for i, traj in enumerate(sampled_trajectories):
+      filename = directory / f"MackeyGlass" / f"tau_{tau}" / f"{i}"
+      np.save(filename, traj)
 
 generate("data", runs=16, n = 1024, resample=True, pts_per_period=100)
