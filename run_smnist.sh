@@ -17,6 +17,7 @@ c_bits=None
 d_bits=None
 qgelu_approx="False"
 hard_sigmoid="False"
+batch_norm="True"
 run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
 
@@ -60,6 +61,10 @@ case $i in
     qgelu_approx="True"
     shift # past argument with no value
     ;;
+    --batch_norm=*)
+    batch_norm="${i#*=}"
+    shift # past argument=value
+    ;;
     --run_name=*)
     run_name="${i#*=}"
     shift # past argument=value
@@ -76,7 +81,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx run_name checkpoint_dir; do
+for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batch_norm run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"
@@ -105,11 +110,12 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # d_model           H: dims for input/output features
 # ssm_size_base     P: latent size in SSM
 # blocks            J: number of blocks used to initialize A
+# NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batch_norm={True|False}`
 python run_qtrain.py \
-    --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 --wandb_apikey="$WANDB_APIKEY" \
+    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=il-ncl --wandb_apikey="$WANDB_APIKEY" \
     $args \
     --dataset=mnist-classification \
     --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
-    --batchnorm=TRUE --prenorm=TRUE --bidirectional=FALSE \
+    --prenorm=TRUE --bidirectional=FALSE \
     --ssm_lr_base=0.004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
     --bsz=50 --epochs=150
