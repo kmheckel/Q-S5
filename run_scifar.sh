@@ -2,7 +2,7 @@
 #SBATCH -p gpu
 #SBATCH --gres=gpu:1
 #SBATCH -c 14
-#SBATCH -t 10:00:00
+#SBATCH -t 24:00:00
 #SBATCH -o /home/sabreu/NeuroSSMs/logs/slurm-%j.out
 
 # NOTE: for quantized runs take ~6x as long as non-quantized
@@ -114,8 +114,11 @@ cd /home/sabreu/NeuroSSMs/S5fork
 python run_qtrain.py \
     --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=il-ncl \
     $args \
-    --dataset=mnist-classification \
-    --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
-    --prenorm=TRUE --bidirectional=FALSE \
-    --ssm_lr_base=0.004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
-    --bsz=50 --epochs=150
+    --dataset=lra-cifar-classification \
+    --n_layers=6 --d_model=512 --ssm_size_base=384 --blocks=3 \
+    --prenorm=True --bsz=50 --epochs=250 \
+    --ssm_lr_base=0.001 --lr_factor=4.5 --p_dropout=0.1 --weight_decay=0.07 \
+    --jax_seed=16416 \
+    --C_init=lecun_normal --bidirectional=True --clip_eigs=True \
+    --opt_config=BfastandCdecay \
+    --warmup_end=1
