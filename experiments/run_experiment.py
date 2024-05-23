@@ -17,7 +17,7 @@ from train_quantized import train
 
 def run(args):
     # Setup logging
-    wandb.init(mode='offline', project=args.experiment)
+    wandb.init(project=args.experiment, config=vars(args))
 
     # Set randomness...
     print("[*] Setting Randomness...")
