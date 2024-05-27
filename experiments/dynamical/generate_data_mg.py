@@ -15,7 +15,7 @@ def make_gen_trajectory(**kwargs):
 
   return gen_trajectory
 
-def generate(directory, runs, max_tau=30, stride=1, **kwargs):
+def generate(directory, runs, max_tau=256, stride=8, **kwargs):
   directory = pathlib.Path(directory)
   if not directory.exists():
     directory.mkdir(parents=True)
@@ -32,4 +32,4 @@ def generate(directory, runs, max_tau=30, stride=1, **kwargs):
       filename = directory / f"MackeyGlass" / f"tau_{tau}" / f"{i}"
       np.save(filename, traj)
 
-generate("data", runs=16, n = 1024, resample=True, pts_per_period=100)
+generate("data", runs=256, n = 1024, resample=True, pts_per_period=100)

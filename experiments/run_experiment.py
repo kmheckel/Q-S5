@@ -14,6 +14,9 @@ import dataloaders
 from s5.utils.util import str2bool
 from train_quantized import train
 
+def smape(x, y):
+    """Symmetric mean absolute percentage error"""
+    return 200 * jnp.mean(jnp.abs(x - y) / (jnp.abs(x) + jnp.abs(y)))
 
 def run(args):
     # Setup logging
@@ -48,8 +51,9 @@ def run(args):
     elif args.experiment == "mackey_glass":
         from dynamical.model import dynamical_ssm
 
+
         # modify this to be a loop over the various tau values and their directories.
-        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "MackeyGlass"
+        data_path = pathlib.Path(__file__).parent / "dynamical" / "data" / "MackeyGlass" / f"{args.tau}"
         (
             trainloader,
             valloader,
@@ -65,7 +69,7 @@ def run(args):
 
         args.d_model = in_dim
         model, state = dynamical_ssm(args, seq_len, in_dim, init_rng)
-        loss_fn = optax.squared_error
+        loss_fn = smape # Symmetric mean absolute percent error
 
     else:
         raise NotImplementedError()
@@ -83,19 +87,25 @@ def run(args):
         loss_fn=loss_fn,
     )
 
+def int_or_none(value):
+    try:
+        return int(value)
+    except:
+        return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", type=str, choices=["lorenz", "dynamical_all"])
+    parser.add_argument("--experiment", type=str, choices=["lorenz", "dynamical_all", "mackey_glass"])
+    parser.add_argument("--tau", type=str, default=None)
 
     # Quant flags
-    parser.add_argument("--a_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--b_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--c_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--d_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--ssm_act_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--non_ssm_bits", type=int, nargs="?", default=None)
-    parser.add_argument("--non_ssm_act_bits", type=int, nargs="?", default=None)
+    parser.add_argument("--a_bits", type=int_or_none, default=None)
+    parser.add_argument("--b_bits", type=int_or_none, default=None)
+    parser.add_argument("--c_bits", type=int_or_none, default=None)
+    parser.add_argument("--d_bits", type=int_or_none, default=None)
+    parser.add_argument("--ssm_act_bits", type=int_or_none, default=None)
+    parser.add_argument("--non_ssm_bits", type=int_or_none, default=None)
+    parser.add_argument("--non_ssm_act_bits", type=int_or_none, default=None)
 
     # Dataset flags
     parser.add_argument(

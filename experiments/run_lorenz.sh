@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-# Run the Lorentz system experiment for different bits
+# Run the Lorenz system experiment for different bits
 A_BITS="1 2 4 8 16"
 B_BITS="1 2 4 8 16"
 C_BITS="1 2 4 8 16"
