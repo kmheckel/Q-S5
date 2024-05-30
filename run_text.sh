@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH -p gpu
+#SBATCH -p g24
 #SBATCH --gres=gpu:1
 #SBATCH -c 14
-#SBATCH -t 10:00:00
+#SBATCH -t 24:00:00
 #SBATCH -o /home/sabreu/NeuroSSMs/logs/slurm-%j.out
 
 # NOTE: for quantized runs take ~6x as long as non-quantized
@@ -20,6 +20,7 @@ hard_sigmoid="False"
 batchnorm="True"
 run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
+use_layernorm_bias="True"
 
 # Parse arguments
 for i in "$@"
@@ -65,6 +66,10 @@ case $i in
     batchnorm="${i#*=}"
     shift # past argument=value
     ;;
+    --use_layernorm_bias=*)
+    use_layernorm_bias="${i#*=}"
+    shift # past argument=value
+    ;;
     --run_name=*)
     run_name="${i#*=}"
     shift # past argument=value
@@ -81,7 +86,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
+for var in use_layernorm_bias a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"
@@ -114,8 +119,12 @@ cd /home/sabreu/NeuroSSMs/S5fork
 python run_qtrain.py \
     --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 \
     $args \
-    --dataset=mnist-classification \
-    --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
-    --prenorm=TRUE --bidirectional=FALSE \
-    --ssm_lr_base=0.004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
-    --bsz=50 --epochs=150
+    --dataset=imdb-classification \
+    --n_layers=6 --d_model=256 --ssm_size_base=192 --blocks=12 \
+    --prenorm=True --bsz=50 --epochs=35 \
+    --ssm_lr_base=0.001 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.07 \
+    --jax_seed=8825365 \
+    --C_init=lecun_normal --bidirectional=True \
+    --opt_config=standard \
+    --warmup_end=0 \
+    --activation_fn=half_glu2 --dt_global=True

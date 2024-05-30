@@ -5,8 +5,6 @@
 #SBATCH -t 10:00:00
 #SBATCH -o /home/sabreu/NeuroSSMs/logs/slurm-%j.out
 
-# NOTE: for quantized runs take ~6x as long as non-quantized
-
 # Default values
 a_bits=None
 ssm_act_bits=None
@@ -19,7 +17,11 @@ qgelu_approx="False"
 hard_sigmoid="False"
 batchnorm="True"
 run_name=None
+load_run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
+use_qlayernorm_if_quantized="True"
+remove_norm_bias_from_checkpoint="False"
+use_layernorm_bias="True"
 
 # Parse arguments
 for i in "$@"
@@ -65,8 +67,24 @@ case $i in
     batchnorm="${i#*=}"
     shift # past argument=value
     ;;
+    --use_qlayernorm_if_quantized=*)
+    use_qlayernorm_if_quantized="${i#*=}"
+    shift # past argument=value
+    ;;
+    --remove_norm_bias_from_checkpoint=*)
+    remove_norm_bias_from_checkpoint="${i#*=}"
+    shift # past argument=value
+    ;;
+    --use_layernorm_bias=*)
+    use_layernorm_bias="${i#*=}"
+    shift # past argument=value
+    ;;
     --run_name=*)
     run_name="${i#*=}"
+    shift # past argument=value
+    ;;
+    --load_run_name=*)
+    load_run_name="${i#*=}"
     shift # past argument=value
     ;;
     --checkpoint_dir=*)
@@ -81,7 +99,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
+for var in remove_norm_bias_from_checkpoint use_layernorm_bias a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx use_qlayernorm_if_quantized batchnorm load_run_name run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"
@@ -111,11 +129,15 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # ssm_size_base     P: latent size in SSM
 # blocks            J: number of blocks used to initialize A
 # NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batchnorm={True|False}`
-python run_qtrain.py \
-    --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 \
+python run_qeval.py \
+    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=il-ncl \
     $args \
-    --dataset=mnist-classification \
-    --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
-    --prenorm=TRUE --bidirectional=FALSE \
-    --ssm_lr_base=0.004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
-    --bsz=50 --epochs=150
+    --dataset=imdb-classification \
+    --n_layers=6 --d_model=256 --ssm_size_base=192 --blocks=12 \
+    --prenorm=True --bsz=50 --epochs=35 \
+    --ssm_lr_base=0.001 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.07 \
+    --jax_seed=8825365 \
+    --C_init=lecun_normal --bidirectional=True \
+    --opt_config=standard \
+    --warmup_end=0 \
+    --activation_fn=half_glu2 --dt_global=True

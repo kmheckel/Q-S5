@@ -20,6 +20,7 @@ hard_sigmoid="False"
 batchnorm="True"
 run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
+load_run_name=None
 
 # Parse arguments
 for i in "$@"
@@ -69,6 +70,10 @@ case $i in
     run_name="${i#*=}"
     shift # past argument=value
     ;;
+    --load_run_name=*)
+    load_run_name="${i#*=}"
+    shift # past argument=value
+    ;;
     --checkpoint_dir=*)
     checkpoint_dir="${i#*=}"
     shift # past argument=value
@@ -81,7 +86,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
+for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm load_run_name run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"
@@ -111,11 +116,13 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # ssm_size_base     P: latent size in SSM
 # blocks            J: number of blocks used to initialize A
 # NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batchnorm={True|False}`
+#
+# NOTE: QAA uses 0.1x the lr of training + 1/3 of the epochs
 python run_qtrain.py \
     --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 \
     $args \
     --dataset=mnist-classification \
     --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
     --prenorm=TRUE --bidirectional=FALSE \
-    --ssm_lr_base=0.004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
-    --bsz=50 --epochs=150
+    --ssm_lr_base=0.0004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
+    --bsz=50 --epochs=50
