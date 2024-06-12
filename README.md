@@ -1,46 +1,14 @@
-# NeuroSSMs
-Neuromoprhic SSMs
+# Quantized SSMs
 
-Relevant background works and related works:
+This repository contains the modified code and scripts necessary to experiment with quantized State Space Models (SSMs).
 
-Spiking LSTM
+We utilize the AQT framework to modify the S5 model architecture to explore the impacts of quantization and mixed precision training on SSMs which is an underexplored question.
 
-LMU
-https://paperswithcode.com/paper/legendre-memory-units-continuous-time
+Since SSMs are reliant on recurrent dynamics to process information, certain parts of the architecture are less robust to quantization than other parts; specifically, the A matrix which linearly maps the recurrent state of the model over time is sensitive to quantization below 8 bits for tasks in the Long Range Arena, while other parameters in the backbone can survive quantization down to 4 bits or below.
 
-Parallel LMU !!! This could be really relevant.
-https://arxiv.org/abs/2102.11417
+The hope is that the insights from this work will inform future research on quantized SSMs and mixed-precision training and inference for selective SSMs such as Mamba and beyond.
+Given that SSMs have linear time and constant spatial complexity with respect to sequence length, quantized SSMs offer promise for future local AI inference with substantially smaller resource demands compared to modern transformer architectures.
 
-SpikeGPT
+# Reproducing Experiments
 
-https://arxiv.org/abs/2309.03641
-
-https://arxiv.org/abs/2401.00955
-
-Parallel Spiking Unit : https://arxiv.org/abs/2402.00449
-This one is reset aware, unlike SPSN.
-
-S4/S5/Mamba
-
-Liquid Neural Networks??
-
-!! Mamba quantization an open question!
-
-https://github.com/state-spaces/mamba/issues/133
-
-Useful questions?
-
-What factors will neuromorphic hardware have to account for to implement NeuroSSMs?
-
-ELM Neuron
-https://arxiv.org/abs/2306.16922
-
-LRU:
-https://arxiv.org/abs/2303.06349
-
-Event Camera SSMs:
-https://arxiv.org/abs/2402.15584
-
-Griffin/Hawk: a modified LRU
-https://arxiv.org/abs/2402.19427
-
+To reproduce experiments from the paper, use the bash scripts in this repo, which will instantiate and execute a quantized SSM model.
