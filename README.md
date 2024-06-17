@@ -1,6 +1,7 @@
 # Quantized SSMs
+[![arXiv](https://img.shields.io/badge/arXiv-2406.09477-b31b1b.svg)](https://arxiv.org/abs/2406.09477)
 
-This repository contains the modified code and scripts necessary to experiment with quantized State Space Models (SSMs).
+This is the official implementation of "Q-S5: Towards Quantized State Space Models".
 
 We utilize the AQT framework to modify the S5 model architecture to explore the impacts of quantization and mixed precision training on SSMs which is an underexplored question.
 
