@@ -20,7 +20,6 @@ hard_sigmoid="False"
 batchnorm="True"
 run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
-use_layernorm_bias="True"
 
 # Parse arguments
 for i in "$@"
@@ -66,10 +65,6 @@ case $i in
     batchnorm="${i#*=}"
     shift # past argument=value
     ;;
-    --use_layernorm_bias=*)
-    use_layernorm_bias="${i#*=}"
-    shift # past argument=value
-    ;;
     --run_name=*)
     run_name="${i#*=}"
     shift # past argument=value
@@ -86,7 +81,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in use_layernorm_bias a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
+for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"
@@ -117,13 +112,13 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # blocks            J: number of blocks used to initialize A
 # NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batchnorm={True|False}`
 python run_qtrain.py \
-    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=rug-minds \
+    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=il-ncl \
     $args \
     --dataset=lra-cifar-classification \
     --n_layers=6 --d_model=512 --ssm_size_base=384 --blocks=3 \
-    --prenorm=True --bsz=50 \
-    --lr_factor=4.5 --p_dropout=0.1 --weight_decay=0.07 \
+    --prenorm=True --bsz=50 --epochs=250 \
+    --ssm_lr_base=0.001 --lr_factor=4.5 --p_dropout=0.1 --weight_decay=0.07 \
     --jax_seed=16416 \
     --C_init=lecun_normal --bidirectional=True --clip_eigs=True \
     --opt_config=BfastandCdecay \
-    --ssm_lr_base=0.00001 --epochs=25
+    --warmup_end=1

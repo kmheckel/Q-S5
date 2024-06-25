@@ -20,6 +20,7 @@ hard_sigmoid="False"
 batchnorm="True"
 run_name=None
 checkpoint_dir="${HOME}/NeuroSSMs/checkpoints"
+use_layernorm_bias="True"
 
 # Parse arguments
 for i in "$@"
@@ -65,6 +66,10 @@ case $i in
     batchnorm="${i#*=}"
     shift # past argument=value
     ;;
+    --use_layernorm_bias=*)
+    use_layernorm_bias="${i#*=}"
+    shift # past argument=value
+    ;;
     --run_name=*)
     run_name="${i#*=}"
     shift # past argument=value
@@ -81,7 +86,7 @@ done
 
 # Prepare optional parameter strings
 args=""
-for var in a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
+for var in use_layernorm_bias a_bits ssm_act_bits non_ssm_act_bits non_ssm_bits b_bits c_bits d_bits hard_sigmoid qgelu_approx batchnorm run_name checkpoint_dir; do
     value=$(eval echo \$$var)
     if [ "$value" != "None" ]; then
         args+=" --$var=$value"

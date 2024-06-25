@@ -1,1 +1,0 @@
-sbatch run_scifar.sh --grad_clip_threshold=1.0 --non_ssm_act_bits=8 --ssm_act_bits=8 --a_bits=4 --b_bits=4 --c_bits=4 --d_bits=4 --non_ssm_bits=4 --qgelu_approx --hard_sigmoid --batchnorm=False --run_name=scifar-W4A8-lnrm-gc1

@@ -8,6 +8,12 @@ echo "scifar-full"
 sbatch run_scifar.sh \
     --batchnorm=False --run_name=scifar-full-ln
 
+# full precision - LN without bias
+echo "scifar-full-ln_nb"
+sbatch run_scifar.sh \
+    --batchnorm=False --use_layernorm_bias=False \
+    --run_name=scifar-full-ln_nb
+
 # W8A8
 echo "scifar-W8A8"
 sbatch run_scifar.sh --non_ssm_act_bits=8 --ssm_act_bits=8 \
@@ -35,6 +41,12 @@ sbatch run_scifar.sh --non_ssm_act_bits=8 --ssm_act_bits=8 \
     --a_bits=4 --b_bits=4 --c_bits=4 --d_bits=4 --non_ssm_bits=4 \
     --qgelu_approx --hard_sigmoid --batchnorm=False \
     --run_name=scifar-W4A8-lnrm
+
+sbatch run_scifar.sh  --non_ssm_act_bits=8 --ssm_act_bits=8 \
+    --a_bits=4 --b_bits=4 --c_bits=4 --d_bits=4 --non_ssm_bits=4 \
+    --qgelu_approx --hard_sigmoid --batchnorm=False \
+    --grad_clip_threshold=1.0 \
+    --run_name=scifar-W4A8-lnrm-gc1
 
 ### Towards 2-bit weights
 

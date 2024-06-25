@@ -117,14 +117,14 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # blocks            J: number of blocks used to initialize A
 # NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batchnorm={True|False}`
 python run_qtrain.py \
-    --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 \
+    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=rug-minds \
     $args \
     --dataset=imdb-classification \
     --n_layers=6 --d_model=256 --ssm_size_base=192 --blocks=12 \
-    --prenorm=True --bsz=50 --epochs=15 \
-    --ssm_lr_base=0.0001 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.07 \
+    --prenorm=True --bsz=50 \
+    --lr_factor=4 --p_dropout=0.1 --weight_decay=0.07 \
     --jax_seed=8825365 \
     --C_init=lecun_normal --bidirectional=True \
     --opt_config=standard \
-    --warmup_end=0 \
-    --activation_fn=half_glu2 --dt_global=True
+    --activation_fn=half_glu2 --dt_global=True \
+    --ssm_lr_base=0.000001 --epochs=5

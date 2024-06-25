@@ -116,13 +116,11 @@ cd /home/sabreu/NeuroSSMs/S5fork
 # ssm_size_base     P: latent size in SSM
 # blocks            J: number of blocks used to initialize A
 # NOTE: batchnorm is included in the $args variable! specify this from `sbatch run_smnist.sh --batchnorm={True|False}`
-#
-# NOTE: QAA uses 0.1x the lr of training + 1/3 of the epochs
 python run_qtrain.py \
-    --USE_WANDB=TRUE --wandb_project=qSSMs --wandb_entity=stevenabreu7 \
+    --USE_WANDB=TRUE --wandb_project=NeuroSSMs --wandb_entity=rug-minds \
     $args \
     --dataset=mnist-classification \
     --n_layers=4 --d_model=96 --ssm_size_base=128 --blocks=1 \
-    --prenorm=TRUE --bidirectional=FALSE \
-    --ssm_lr_base=0.0004 --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
-    --bsz=50 --epochs=50
+    --bsz=50 --prenorm=TRUE --bidirectional=FALSE \
+    --lr_factor=4 --p_dropout=0.1 --weight_decay=0.01 \
+    --epochs=15 --ssm_lr_base=0.00004
